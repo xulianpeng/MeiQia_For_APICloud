@@ -36,11 +36,11 @@ static CGFloat const kMQCellBubbleToTextHorizontalSmallerSpacing = 10.0;
 /**
  * 聊天气泡和其中的文字垂直间距
  */
-static CGFloat const kMQCellBubbleToTextVerticalSpacing = 8.0;
+static CGFloat const kMQCellBubbleToTextVerticalSpacing = 12.0;
 /**
  * 聊天气泡最大宽度与边沿的距离
  */
-static CGFloat const kMQCellBubbleMaxWidthToEdgeSpacing = 32.0;
+static CGFloat const kMQCellBubbleMaxWidthToEdgeSpacing = 48.0;
 /**
  * 聊天头像的直径
  */
@@ -92,18 +92,6 @@ typedef NS_ENUM(NSUInteger, MQChatCellFromType) {
     MQChatCellIncoming,
     MQChatCellOutgoing
 };
-
-/**
- *  cell的发送状态
- *  MQChatCellSending       - 正在发消息
- *  MQChatCellSended        - 消息已发送
- *  MQChatCellSentFailure   - 消息发送失败
- */
-//typedef NS_ENUM(NSUInteger, MQChatMessageSendStatus) {
-//    MQChatCellSending,
-//    MQChatCellSended,
-//    MQChatCellSentFailure
-//};
 
 /**
  * MQCellModelProtocol协议定义了ChatCell的view需要满足的方法，开发者也可根据自身需要，增加协议方法
@@ -175,6 +163,12 @@ typedef NS_ENUM(NSUInteger, MQChatCellFromType) {
  *  @param avatarImage 头像 image
  */
 - (void)updateOutgoingAvatarImage:(UIImage *)avatarImage;
+
+/**
+ 通知 cell model，该 model 中所对应的机器人 message 已经被评价过了
+ */
+- (void)didEvaluate;
+
 
 @end
 

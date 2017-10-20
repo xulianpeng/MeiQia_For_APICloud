@@ -15,6 +15,7 @@
 #import "MQChatAudioRecorder.h"
 #import "MQAssetUtil.h"
 #import "MQBundleUtil.h"
+#import "MQChatViewConfig.h"
 
 static CGFloat const kMQRecordViewDiameter = 150.0;
 static CGFloat const kMQVolumeViewTopMargin = 16.0;
@@ -61,7 +62,9 @@ static NSInteger const kMQMaxRecordVoiceDurationDeviation = 2;
         tipLabel.font = [UIFont boldSystemFontOfSize:14];
         tipLabel.textAlignment = NSTextAlignmentCenter;
         
-        [self addSubview:blurView];
+        if ([MQChatViewConfig sharedConfig].enableVoiceRecordBlurView) {
+            [self addSubview:blurView];
+        }
         [self addSubview:recordView];
         [recordView addSubview:volumeView];
         [recordView addSubview:tipLabel];
@@ -70,6 +73,22 @@ static NSInteger const kMQMaxRecordVoiceDurationDeviation = 2;
         audioRecorder.delegate = self;
     }
     return self;
+}
+
+- (void)setRecordMode:(MQRecordMode)recordMode {
+    audioRecorder.recordMode = recordMode;
+}
+
+- (MQRecordMode)recordMode {
+    return audioRecorder.recordMode;
+}
+
+- (void)setKeepSessionActive:(BOOL)keepSessionActive {
+    audioRecorder.keepSessionActive = keepSessionActive;
+}
+
+- (BOOL)keepSessionActive {
+    return audioRecorder.keepSessionActive;
 }
 
 -(void)setRevoke:(BOOL)revoke
@@ -110,6 +129,9 @@ static NSInteger const kMQMaxRecordVoiceDurationDeviation = 2;
 
 - (void)reDisplayRecordView {
     self.hidden = NO;
+    if (![MQChatViewConfig sharedConfig].enableVoiceRecordBlurView) {
+        return;
+    }
     if ([recordView.superview isEqual:self]) {
         [recordView removeFromSuperview];
     }
@@ -145,13 +167,13 @@ static NSInteger const kMQMaxRecordVoiceDurationDeviation = 2;
     }
 }
 
--(void)didMoveToSuperview
-{
-    if (!isVisible) {
-        [self setupUI];
-        isVisible = YES;
-    }
-}
+//-(void)didMoveToSuperview
+//{
+//    if (!isVisible) {
+//        [self setupUI];
+//        isVisible = YES;
+//    }
+//}
 
 -(void)startRecording
 {
@@ -271,7 +293,10 @@ static NSInteger const kMQMaxRecordVoiceDurationDeviation = 2;
 }
 
 - (void)didUpdateAudioVolume:(Float32)volume {
-    [self setRecordingVolume:volume];
+//    [self setRecordingVolume:volume];
+    if ([self.recordViewDelegate respondsToSelector:@selector(didUpdateVolumeInRecordView:volume:)]) {
+        [self.recordViewDelegate didUpdateVolumeInRecordView:self volume:volume];
+    }
 }
 
 - (void)didEndRecording {

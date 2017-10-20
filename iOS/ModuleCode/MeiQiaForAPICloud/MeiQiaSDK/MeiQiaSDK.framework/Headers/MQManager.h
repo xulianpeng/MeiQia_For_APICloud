@@ -11,8 +11,11 @@
 #import "MQMessage.h"
 #import "MQDefinition.h"
 #import "MQAgent.h"
+#import "MQEnterprise.h"
+#import "MQPreChatData.h"
 
-#define MQSDKVersion @"3.1.3"
+
+#define MQSDKVersion @"3.4.1"
 
 @protocol MQManagerDelegate <NSObject>
 
@@ -29,7 +32,20 @@
  *
  * 开发者可以通过MQManager中提供的接口，对SDK进行配置；
  */
+
+@class MQTicket;
 @interface MQManager : NSObject
+
+
+/// 注册状态观察者在状态改变的时候调用
+/// 注意不要使用 self, 该 block 会被 retain，使用 self 会导致调用的类无法被释放。
++ (void)addStateObserverWithBlock:(StateChangeBlock)block withKey:(NSString *)key;
+
+/// 移除已注册的状态观察者
++ (void)removeStateChangeObserverWithKey:(NSString *)key;
+
+/// 获取当前的状态
++ (MQState)getCurrentState;
 
 /**
  *  开启美洽服务
@@ -50,9 +66,14 @@
  * App进入后台后，美洽推送给开发者服务端的消息数据格式中，会有deviceToken的字段。
  *
  * @param deviceToken 设备唯一标识，用于推送服务;
- * @warning 初始化前后均可调用
+ * @warning 初始化前后均可调用，如果使用 swift，建议使用 registerDeviceTokenString:(NSString *)token 代替
  */
 + (void)registerDeviceToken:(NSData *)deviceToken;
+
+/**
+ @param deviceToken 去掉特殊符号和空格之后的字符串，若使用 swift 集成 MeiQiaSDK 的时候，NSData 会被自动转为 Data，这个时候无法用上面的方法正确获取 deviceToken，需要使用这个方法。
+ */
++ (void)registerDeviceTokenString:(NSString *)token;
 
 /**
  * 初始化SDK。美洽建议开发者在AppDelegate.m中的系统回调didFinishLaunchingWithOptions中进行SDK初始化。
@@ -62,6 +83,21 @@
  * @param completion 如果初始化成功，将会返回clientId，并且error为nil；如果初始化失败，clientId为空，会返回error
  */
 + (void)initWithAppkey:(NSString*)appKey completion:(void (^)(NSString *clientId, NSError *error))completion;
+
+/**
+    获取本地初始化过的 app key
+ */
++ (NSArray *)getLocalAppKeys;
+
+/**
+ 获取当前使用的 app key
+ */
++ (NSString *)getCurrentAppKey;
+
+/**
+ 获取消息所对应的企业 appkey
+ */
++ (NSString *)appKeyForMessage:(MQMessage *)message;
 
 /**
  * 设置指定分配的客服或客服组。
@@ -76,13 +112,29 @@
                         scheduleRule:(MQScheduleRules)scheduleRule;
 
 /**
+ * 设置不指定分配的客服或客服组。
+ *
+*/
++ (void)setNotScheduledAgentWithAgentId:(NSString *)agentId;
+
+/**
  * 开发者自定义当前顾客的信息，用于展示给客服。
  *
  * @param clientInfo 顾客的信息
- * @warning 需要顾客先上线，再上传顾客信息
+ * @warning 需要顾客先上线，再上传顾客信息。如果开发者使用美洽的开源界面，不需要调用此接口，使用 MQChatViewManager 中的 setClientInfo 配置用户自定义信息即可。
  * @warning 如果开发者使用「开源聊天界面」的接口来上线，则需要监听 MQ_CLIENT_ONLINE_SUCCESS_NOTIFICATION「顾客成功上线」的广播（见 MQDefinition.h），再调用此接口
  */
 + (void)setClientInfo:(NSDictionary<NSString *, NSString *>*)clientInfo
+           completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+ * 开发者自定义当前顾客的信息，用于展示给客服，强制更新
+ *
+ * @param clientInfo 顾客的信息
+ * @warning 需要顾客先上线，再上传顾客信息。如果开发者使用美洽的开源界面，不需要调用此接口，使用 MQChatViewManager 中的 setClientInfo 配置用户自定义信息即可。
+ * @warning 如果开发者使用「开源聊天界面」的接口来上线，则需要监听 MQ_CLIENT_ONLINE_SUCCESS_NOTIFICATION「顾客成功上线」的广播（见 MQDefinition.h），再调用此接口
+ */
++ (void)updateClientInfo:(NSDictionary<NSString *, NSString *>*)clientInfo
            completion:(void (^)(BOOL success, NSError *error))completion;
 
 /**
@@ -149,6 +201,12 @@
  *  
  */
 + (NSString *)getCurrentClientId;
+
+
+/**
+ 当前的顾客自定义 id
+ */
++ (NSString *)getCurrentCustomizedId;
 
 /**
  *  获取当前顾客的顾客信息
@@ -218,6 +276,14 @@
                           progress:(void (^)(float progress))progressBlock
                         completion:(void (^)(NSData *mediaData, NSError *error))completion;
 
+
+/**
+ *  取消下载
+ *
+ *  @param urlString     url
+ */
++ (void)cancelDownloadForUrl:(NSString *)urlString;
+
 /**
  *  清除所有美洽的多媒体缓存
  *
@@ -270,11 +336,16 @@
 
 /**
  * 是否修改某条消息为未读
- * @param messageId 被修改的消息id
+ * @param messageIds 被修改的消息id数组
  * @param isRead   该消息是否已读
  */
-+ (void)updateMessage:(NSString *)messageId
++ (void)updateMessageIds:(NSArray *)messageIds
          toReadStatus:(BOOL)isRead;
+
+/**
+ * 将所有消息标记为已读
+ */
++ (void)markAllMessagesAsRead;
 
 /**
  *  将数据库中某个message删除
@@ -311,10 +382,185 @@
                                        completion:(void (^)(BOOL success, NSError *error))completion;
 
 /**
+ *  缓存当前的输入文字
+ *
+ *  @param inputtingText 输入文字
+ */
++ (void)setCurrentInputtingText:(NSString *)inputtingText;
+
+/**
+ *  获取缓存的输入文字
+ *
+ *  @return 输入文字
+ */
++ (NSString *)getPreviousInputtingText;
+
+/**
  * 获得当前美洽SDK的版本号
  */
 + (NSString *)getMeiQiaSDKVersion;
 
+
+/**
+ * 获得所有未读消息，包括本地和服务端的
+ */
++ (void)getUnreadMessagesWithCompletion:(void (^)(NSArray *messages, NSError *error))completion;
+
+/**
+ 获得本地未读消息
+ */
++ (NSArray *)getLocalUnreadeMessages;
+
+/**
+ * 当前用户是否被加入黑名单
+ */
++ (BOOL)isBlacklisted;
+
+
+/**
+ * 请求文件的下载地址
+ */
++ (void)clientDownloadFileWithMessageId:(NSString *)messageId
+                                      conversatioId:(NSString *)conversationId
+                                      andCompletion:(void(^)(NSString *url, NSError *error))action;
+
+/**
+ 修改或增加已保存的消息中的 accessory data 中的数据
+ 
+ @param accessoryData 字典中的数据必须是基本数据和字符串
+ */
++ (void)updateMessageWithId:(NSString *)messageId forAccessoryData:(NSDictionary *)accessoryData;
+
+/**
+ 对机器人的回答做评价
+ @param messageId 消息 id
+ */
++ (void)evaluateBotMessage:(NSString *)messageId
+                  isUseful:(BOOL)isUseful
+                completion:(void (^)(BOOL success, NSString *text, NSError *error))completion;
+
+/**
+ 强制转人工
+ */
++ (void)forceRedirectHumanAgentWithSuccess:(void (^)(MQClientOnlineResult result, MQAgent *agent, NSArray<MQMessage *> *messages))success
+                                   failure:(void (^)(NSError *error))failure
+                    receiveMessageDelegate:(id<MQManagerDelegate>)receiveMessageDelegate;
+
+/**
+ 转换 emoji 别名为 Unicode
+ */
++ (NSString *)convertToUnicodeWithEmojiAlias:(NSString *)text;
+
+/**
+ 获取当前的客服 id
+ */
++ (NSString *)getCurrentAgentId;
+
+/**
+ 获取当前的客服 type: agent | admin | robot
+ */
++ (NSString *)getCurrentAgentType;
+
+/**
+获取当前企业的配置信息
+ */
+
++ (void)getEnterpriseConfigDataWithCache:(BOOL)isLoadCache complete:(void(^)(MQEnterprise *, NSError *))action;
+
+/**
+ 开始显示聊天界面，如果自定义聊天界面，在聊天界面出现的时候调用，通知 SDK 进行初始化
+ */
++ (void)didStartChat;
+
+/**
+ 聊天结束，如果自定义聊天界面，在聊天界面消失的时候嗲用，通知 SDK 进行清理工作
+ */
++ (void)didEndChat;
+
+/* 获取客服邀请评价显示的文案
+ */
++ (void)getEvaluationPromtTextComplete:(void(^)(NSString *, NSError *))action;
+
+/**
+ 获取是否显示强制转接人工按钮
+ */
++ (void)getIsShowRedirectHumanButtonComplete:(void(^)(BOOL, NSError *))action;
+
+/**
+ 获取留言表单引导文案
+ */
++ (void)getMessageFormConfigComplete:(void (^)(MQEnterpriseConfig *config, NSError *))action;
+
+/**
+ 获取 ticket 类别
+ */
++ (void)getTicketCategoryComplete:(void(^)(NSArray *categories))action;
+
+/**
+ 获取从指定日期开始的所有工单消息
+ */
++ (void)getTicketsFromDate:(NSDate *)date complete:(void(^)(NSArray *, NSError *))action;
+
+/**
+ *  提交留言表单
+ *
+ *  @param message 留言消息
+ *  @param images 图片数组
+ *  @param clientInfo 顾客的信息
+ *  @param completion  提交留言表单的回调
+ */
++ (void)submitMessageFormWithMessage:(NSString *)message
+                              images:(NSArray *)images
+                          clientInfo:(NSDictionary<NSString *, NSString *>*)clientInfo
+                          completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+    切换本地用户为指定的自定义 id 用户, 回调的 clientId 如果为 nil 的话表示刷新失败，或者该用户不存在。
+ */
++ (void)refreshLocalClientWithCustomizedId:(NSString *)customizedId complete:(void(^)(NSString *clientId))action;
+
+/**
+ 获取当前用户在等待队列的位置
+ */
++ (void)getClientQueuePositionComplete:(void (^)(NSInteger position, NSError *error))action;
+
+/**
+ 获取用户在等待队列中的位置，为 0 则表示没有在等待队列
+ */
++ (int)waitingInQueuePosition;
+
+
++ (NSError *)checkGlobalError;
+
+/**
+ 根据当前的用户 id， 或者自定义用户 id，首先判断需不需要显示询前表单：如果当前对话未结束，则需要显示，这时发起请求，从服务器获取表单数据，返回的结果根据用户指定的 agent token， group token（如果有），将数据过滤之后返回。
+ */
++ (void)requestPreChatServeyDataIfNeedWithClientId:(NSString *)clientIdIn customizedId:(NSString *)customizedIdIn completion:(void(^)(MQPreChatData *data, NSError *error))block;
+
+/**
+ 获取验证码图片和 token
+ */
++ (void)getCaptchaComplete:(void(^)(NSString *token, UIImage *image))block;
+
+/**
+ 获取验证码图片和 token
+ */
++ (void)getCaptchaURLComplete:(void(^)(NSString *token, NSString *imageURL))block;
+
+/**
+ 提交用户填写的讯前表单数据
+ */
++ (void)submitPreChatForm:(NSDictionary *)formData completion:(void(^)(id, NSError *))block;
+
+/**
+ 提交用户填写的留言工单
+ */
++ (void)submitTicketForm:(NSString *)content userInfo:(NSDictionary *)userInfo completion:(void(^)(MQTicket *ticket, NSError *))block;
+
+/**
+ 获取是否第一次上线
+ */
++ (BOOL)getLoginStatus;
 
 
 @end

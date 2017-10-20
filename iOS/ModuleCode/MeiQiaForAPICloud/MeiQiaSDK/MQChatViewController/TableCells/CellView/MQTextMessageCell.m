@@ -7,16 +7,17 @@
 //
 
 #import "MQTextMessageCell.h"
-#import "MQTextCellModel.h"
 #import "MQChatFileUtil.h"
 #import "MQChatViewConfig.h"
 #import "MQBundleUtil.h"
+#import "MQTextCellModel.h"
+#import "MEIQIA_TTTAttributedLabel.h"
 
 static const NSInteger kMQTextCellSelectedUrlActionSheetTag = 2000;
 static const NSInteger kMQTextCellSelectedNumberActionSheetTag = 2001;
 static const NSInteger kMQTextCellSelectedEmailActionSheetTag = 2002;
 
-@interface MQTextMessageCell() <TTTAttributedLabelDelegate, UIActionSheetDelegate, UIAlertViewDelegate>
+@interface MQTextMessageCell() <MEIQIA_TTTAttributedLabelDelegate, UIActionSheetDelegate, UIAlertViewDelegate>
 
 @end
 
@@ -108,40 +109,19 @@ static const NSInteger kMQTextCellSelectedEmailActionSheetTag = 2002;
         textLabel.attributedText = cellModel.cellText;
     }
     //获取文字中的可选中的元素
-    if (cellModel.numberRangeDic.count > 0) {
-        NSString *longestKey = @"";
-        for (NSString *key in cellModel.numberRangeDic.allKeys) {
-            //找到最长的key
-            if (key.length > longestKey.length) {
-                longestKey = key;
-            }
+    if (cellModel.emailNumberRangeDic.count > 0) {
+        for (NSString *key in cellModel.emailNumberRangeDic.allKeys) {
+            [textLabel addLinkToTransitInformation:@{@"email" : key} withRange:[cellModel.emailNumberRangeDic[key] rangeValue]];
         }
-        if([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0){
-            [textLabel addLinkToPhoneNumber:longestKey withRange:[cellModel.numberRangeDic[longestKey] rangeValue]];
+    }
+    if (cellModel.numberRangeDic.count > 0) {
+        for (NSString *key in cellModel.numberRangeDic.allKeys) {
+            [textLabel addLinkToPhoneNumber:key withRange:[cellModel.numberRangeDic[key] rangeValue]];
         }
     }
     if (cellModel.linkNumberRangeDic.count > 0) {
-        NSString *longestKey = @"";
         for (NSString *key in cellModel.linkNumberRangeDic.allKeys) {
-            //找到最长的key
-            if (key.length > longestKey.length) {
-                longestKey = key;
-            }
-        }
-        if([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0){
-            [textLabel addLinkToURL:[NSURL URLWithString:longestKey] withRange:[cellModel.linkNumberRangeDic[longestKey] rangeValue]];
-        }
-    }
-    if (cellModel.emailNumberRangeDic.count > 0) {
-        NSString *longestKey = @"";
-        for (NSString *key in cellModel.emailNumberRangeDic.allKeys) {
-            //找到最长的key
-            if (key.length > longestKey.length) {
-                longestKey = key;
-            }
-        }
-        if([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0){
-            [textLabel addLinkToTransitInformation:@{@"email" : longestKey} withRange:[cellModel.emailNumberRangeDic[longestKey] rangeValue]];
+            [textLabel addLinkToURL:[NSURL URLWithString:key] withRange:[cellModel.linkNumberRangeDic[key] rangeValue]];
         }
     }
     
@@ -189,7 +169,6 @@ didLongPressLinkWithPhoneNumber:(NSString *)phoneNumber
     [[NSNotificationCenter defaultCenter] postNotificationName:MQChatViewKeyboardResignFirstResponderNotification object:nil];
     switch (actionSheet.tag) {
         case kMQTextCellSelectedNumberActionSheetTag: {
-            NSLog(@"点击了一个数字");
             switch (buttonIndex) {
                 case 0:
                     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[NSString stringWithFormat:@"tel://%@", actionSheet.title]]];
@@ -206,7 +185,6 @@ didLongPressLinkWithPhoneNumber:(NSString *)phoneNumber
             break;
         }
         case kMQTextCellSelectedUrlActionSheetTag: {
-            NSLog(@"点击了一个url");
             switch (buttonIndex) {
                 case 0: {
                     if ([actionSheet.title rangeOfString:@"://"].location == NSNotFound) {
@@ -225,7 +203,6 @@ didLongPressLinkWithPhoneNumber:(NSString *)phoneNumber
             break;
         }
         case kMQTextCellSelectedEmailActionSheetTag: {
-            NSLog(@"点击了一个email");
             switch (buttonIndex) {
                 case 0: {
                     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:[NSString stringWithFormat:@"mailto://%@", actionSheet.title]]];
@@ -271,7 +248,6 @@ didLongPressLinkWithPhoneNumber:(NSString *)phoneNumber
 #pragma UIAlertViewDelegate
 -(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     if (buttonIndex == 1) {
-        NSLog(@"重新发送");
         [self.chatCellDelegate resendMessageInCell:self resendData:@{@"text" : textLabel.text}];
     }
 }

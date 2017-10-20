@@ -7,6 +7,21 @@
 //
 #import <Foundation/Foundation.h>
 
+#define stringify(arg) (@""#arg)
+#define recordError(e) { [MQDataCache sharedCache].globalError = e; }
+
+typedef NS_ENUM(NSUInteger, MQState) {
+    MQStateUninitialized,
+    MQStateInitialized,
+    MQStateOffline, // not using
+    MQStateUnallocatedAgent,
+    MQStateAllocatingAgent,
+    MQStateAllocatedAgent,
+    MQStateBlacklisted,
+    MQStateQueueing,
+};
+typedef void (^StateChangeBlock)(MQState oldState, MQState newState, NSDictionary *value, NSError *error);
+
 /**
  *  美洽客服系统当前有新消息，开发者可实现该协议方法，通过此方法显示小红点未读标识
  */
@@ -15,6 +30,7 @@
 /**
  *  收到该通知，即表示美洽的通信接口出错，通信连接断开
  */
+
 #define MQ_COMMUNICATION_FAILED_NOTIFICATION @"MQ_COMMUNICATION_FAILED_NOTIFICATION"
 
 /**
@@ -25,7 +41,30 @@
 /**
  *  美洽的错误码
  */
-static NSString * const MQRequesetErrorDomain = @"com.meiqia.error.resquest.error";
+#define MQRequesetErrorDomain @"com.meiqia.error.resquest.error"
+
+
+/**
+ 当连接的状态改变时发送的通知
+ */
+#define MQ_NOTIFICATION_SOCKET_STATUS_CHANGE @"MQ_NOTIFICATION_SOCKET_STATUS_CHANGE"
+#define SOCKET_STATUS_CONNECTED @"SOCKET_STATUS_CONNECTED"
+#define SOCKET_STATUS_DISCONNECTED @"SOCKET_STATUS_DISCONNECTED"
+
+/**
+ 聊天窗口出现
+ */
+#define MQ_NOTIFICATION_CHAT_BEGIN @"MQ_NOTIFICATION_CHAT_BEGIN"
+
+/**
+ 聊天窗口消失
+ */
+#define MQ_NOTIFICATION_CHAT_END @"MQ_NOTIFICATION_CHAT_END"
+
+/**
+ 当用户从排队队列被客服接入的时候出现
+ */
+#define MQ_NOTIFICATION_QUEUEING_END @"MQ_NOTIFICATION_QUEUEING_END"
 
 /**
  美洽Error的code对应码
@@ -36,7 +75,12 @@ typedef enum : NSInteger {
     MQErrorCodeCurrentClientNotFound        = -2003,    //当前没有顾客，请新建一个顾客后再上线
     MQErrorCodeClientNotExisted             = -2004,    //美洽服务端没有找到对应的client
     MQErrorCodeConversationNotFound         = -2005,    //美洽服务端没有找到该对话
-    MQErrorCodePlistConfigurationError      = -2006     //开发者App的info.plist没有增加NSExceptionDomains，请参考https://github.com/Meiqia/Meiqia-SDK-iOS-Demo#info.plist设置
+    MQErrorCodePlistConfigurationError      = -2006,    //开发者App的info.plist没有增加NSExceptionDomains，请参考https://github.com/Meiqia/Meiqia-SDK-iOS-Demo#info.plist设置
+    MQErrorCodeBlacklisted                  = -2007,    //被加入黑名单，发消息和分配对话都会失败
+    MQErrorCodeSchedulerFail                = -2008,    // 分配对话失败
+    MQErrorCodeUninitailized                = -2009,    // 未初始化操作
+    MQErrorCodeInitializFailed              = -2010,    // 初始化失败
+    MQErrorCodeBotFailToRedirectToHuman     = -3001,    // 机器人转人工失败
 } MQErrorCode;
 
 /**
@@ -45,7 +89,8 @@ typedef enum : NSInteger {
 typedef enum : NSUInteger {
     MQClientOnlineResultSuccess = 0,        //上线成功
     MQClientOnlineResultParameterError,     //上线参数错误
-    MQClientOnlineResultNotScheduledAgent   //没有可接待的客服
+    MQClientOnlineResultNotScheduledAgent,   //没有可接待的客服
+    MQClientOnlineResultBlacklisted,
 } MQClientOnlineResult;
 
 /**

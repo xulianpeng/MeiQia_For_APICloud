@@ -8,11 +8,14 @@
 
 #import "MQTipsCell.h"
 #import "MQTipsCellModel.h"
+#import "MQBundleUtil.h"
 
 @implementation MQTipsCell {
     UILabel *tipsLabel;
     CALayer *topLineLayer;
     CALayer *bottomLineLayer;
+    UITapGestureRecognizer *tapReconizer;
+    MQTipType tipType;
 }
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
@@ -43,6 +46,8 @@
     
     MQTipsCellModel *cellModel = (MQTipsCellModel *)model;
     
+    tipType = cellModel.tipType;
+    
     //刷新时间label
     NSMutableAttributedString *tipsString = [[NSMutableAttributedString alloc] initWithString:cellModel.tipText];
     [tipsString addAttributes:cellModel.tipExtraAttributes range:cellModel.tipExtraAttributesRange];
@@ -59,6 +64,13 @@
     }
     topLineLayer.frame = cellModel.topLineFrame;
     bottomLineLayer.frame = cellModel.bottomLineFrame;
+    
+    // 判断是否该 tip 是提示留言的 tip，若是提示留言 tip，则增加点击事件
+    if (!tapReconizer) {
+        tapReconizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapTipCell:)];
+        self.contentView.userInteractionEnabled = true;
+        [self.contentView addGestureRecognizer:tapReconizer];
+    }
 }
 
 - (CAGradientLayer*)gradientLine {
@@ -72,5 +84,26 @@
                     (id)[UIColor clearColor].CGColor];
     return line;
 }
+
+- (void)tapTipCell:(id)sender {
+    if ([tipsLabel.text isEqualToString:[MQBundleUtil localizedStringForKey:@"reply_tip_text"]]) {
+        if ([self.chatCellDelegate respondsToSelector:@selector(didTapReplyBtn)]) {
+            [self.chatCellDelegate didTapReplyBtn];
+        }
+    }
+    NSArray *botRedirectArray = @[[MQBundleUtil localizedStringForKey:@"bot_redirect_tip_text"], [MQBundleUtil localizedStringForKey:@"bot_manual_redirect_tip_text"]];
+    if ([botRedirectArray containsObject:tipsLabel.text]) {
+        if ([self.chatCellDelegate respondsToSelector:@selector(didTapBotRedirectBtn)]) {
+            [self.chatCellDelegate didTapBotRedirectBtn];
+        }
+    }
+    if (tipType == MQTipTypeWaitingInQueue) {
+        if ([self.chatCellDelegate respondsToSelector:@selector(didTapReplyBtn)]) {
+            [self.chatCellDelegate didTapReplyBtn];
+        }
+    }
+}
+
+
 
 @end

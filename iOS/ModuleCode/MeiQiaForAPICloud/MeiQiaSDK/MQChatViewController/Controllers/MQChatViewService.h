@@ -10,18 +10,13 @@
 #import "MQBaseMessage.h"
 #import <UIKit/UIKit.h>
 #import "MQChatViewConfig.h"
+#import "MQCellModelProtocol.h"
 #ifdef INCLUDE_MEIQIA_SDK
 #import "MQServiceToViewInterface.h"
 #endif
 
 @protocol MQChatViewServiceDelegate <NSObject>
 
-/**
- *  是否隐藏RightBarButtonItem
- *
- *  @param enabled 是否隐藏
- */
-- (void)hideRightBarButtonItem:(BOOL)isHide;
 
 /**
  *  获取到了更多历史消息
@@ -29,7 +24,7 @@
  *  @param cellNumber 需要显示的cell数量
  *  @param isLoadOver 是否已经获取完了历史消息
  */
-- (void)didGetHistoryMessagesWithCellNumber:(NSInteger)cellNumber isLoadOver:(BOOL)isLoadOver;
+- (void)didGetHistoryMessagesWithCommitTableAdjustment:(void(^)(void))commit;
 
 /**
  *  已经更新了这条消息的数据，通知tableView刷新界面
@@ -41,10 +36,19 @@
  */
 - (void)reloadChatTableView;
 
+/*
+ call after add model
+ */
+- (void)insertCellAtBottomForModelCount:(NSInteger)count;
+
+- (void)insertCellAtTopForModelCount:(NSInteger)count;
+
+- (void)removeCellAtIndex:(NSInteger)index;
+
 /**
  *  通知viewController将tableView滚动到底部
  */
-- (void)scrollTableViewToBottom;
+- (void)scrollTableViewToBottomAnimated:(BOOL)animated;
 
 /**
  *  通知viewController收到了消息
@@ -74,7 +78,12 @@
  *
  *  @param viewTitle 客服名字
  */
-- (void)didScheduleClientWithViewTitle:(NSString *)viewTitle;
+- (void)didScheduleClientWithViewTitle:(NSString *)viewTitle agentStatus:(MQChatAgentStatus)agentStatus;
+
+/**
+ *  根据 agentType 改变导航栏右键
+ */
+- (void)changeNavReightBtnWithAgentType:(NSString *)agentType hidden:(BOOL)hidden;
 
 #endif
 
@@ -102,6 +111,16 @@
 
 /** 聊天界面的宽度 */
 @property (nonatomic, assign) CGFloat chatViewWidth;
+
+/** 顾客当前的状态 */
+@property (nonatomic, assign) MQState clientStatus;
+
+- (instancetype)initWithDelegate:(id<MQChatViewServiceDelegate>)delegate errorDelegate:(id<MQServiceToViewInterfaceErrorDelegate>)errorDelegate;
+
+/**
+ 增加cellModel并刷新tableView
+ */
+- (void)addCellModelAndReloadTableViewWithModel:(id<MQCellModelProtocol>)cellModel;
 
 /**
  * 获取更多历史聊天消息
@@ -169,12 +188,47 @@
  */
 - (void)dismissingChatViewController;
 
+/**
+ *  获取之前的输入文字
+ */
+- (NSString *)getPreviousInputtingText;
+
+/**
+ *  设置当前输入的文字
+ */
+- (void)setCurrentInputtingText:(NSString *)inputtingText;
+
+/**
+ *  评价机器人消息
+ */
+- (void)evaluateBotAnswer:(BOOL)isUseful messageId:(NSString *)messageId;
+
+/**
+ *  强制转接人工客服
+ */
+- (void)forceRedirectToHumanAgent;
+
+/**
+ 保存用户输入的文字为草稿
+ */
+- (void)saveTextDraftIfNeeded:(UITextField *)tf;
+
+/**
+ 恢复用户保存的草稿
+ */
+- (void)fillTextDraftToFiledIfExists:(UITextField *)tf;
+
+/**
+ 手动上线当前顾客
+ */
+- (void)setClientOnline;
 
 #ifndef INCLUDE_MEIQIA_SDK
 /**
  * 使用MQChatViewControllerDemo的时候，调试用的方法，用于收取和上一个message一样的消息
  */
 - (void)loadLastMessage;
+
 
 #else
 

@@ -11,6 +11,9 @@
 #import "MQChatDeviceUtil.h"
 #import "MQEvaluationCell.h"
 #import "MQNamespacedDependencies.h"
+#import "MQChatViewConfig.h"
+#import "UIColor+MQHex.h"
+#import "MQServiceToViewInterface.h"
 
 static CGFloat const kMQEvaluationVerticalSpacing = 16.0;
 static CGFloat const kMQEvaluationHorizontalSpacing = 16.0;
@@ -30,6 +33,10 @@ static CGFloat const kMQEvaluationHorizontalSpacing = 16.0;
     if (self) {
         [self initCustomAlertView];
         selectedLevelRow = 0;
+        
+        if ([UIColor getDarkerColorFromColor1:[MQChatViewConfig sharedConfig].navBarColor color2:[MQChatViewConfig sharedConfig].navBarTintColor] > 0) {
+            evaluationAlertView.tintColor = [UIColor getDarkerColorFromColor1:[MQChatViewConfig sharedConfig].navBarColor color2:[MQChatViewConfig sharedConfig].navBarTintColor];
+        }
     }
     return self;
 }
@@ -57,6 +64,12 @@ static CGFloat const kMQEvaluationHorizontalSpacing = 16.0;
     alertViewTitle.textAlignment = NSTextAlignmentCenter;
     alertViewTitle.font = [UIFont systemFontOfSize:17.0];
     [customView addSubview:alertViewTitle];
+    
+    [MQServiceToViewInterface getEnterpriseConfigInfoWithCache:YES complete:^(MQEnterprise *enterprise, NSError *error) {
+        if (enterprise.configInfo.evaluationPromtText.length > 0) {
+            alertViewTitle.text = enterprise.configInfo.evaluationPromtText;
+        }
+    }];
     
     //tableView 上分割线
     UIView *tableTopLine = [[UIView alloc] initWithFrame:CGRectMake(0, alertViewTitle.frame.origin.y+alertViewTitle.frame.size.height+kMQEvaluationVerticalSpacing, customView.frame.size.width, 0.5)];
@@ -97,6 +110,7 @@ static CGFloat const kMQEvaluationHorizontalSpacing = 16.0;
 
     return customView;
 }
+
 
 - (void)showEvaluationAlertView {
     if (evaluationAlertView) {

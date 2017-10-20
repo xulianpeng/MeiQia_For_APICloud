@@ -15,8 +15,13 @@
 #import "MQVoiceMessage.h"
 #import "MQTextMessage.h"
 #import "MQEventMessage.h"
+#import "MQBotAnswerMessage.h"
+#import "MQBotMenuMessage.h"
 #import "MQChatViewConfig.h"
-#import <MeiQiaSDK/MQDefinition.h>
+#import <MeiQiaSDK/MeiQiaSDK.h>
+#import "MQFileDownloadMessage.h"
+#import "MQRichTextMessage.h"
+#import "MQBotRichTextMessage.h"
 
 /**
  *  该协议是UI层获取数据的委托方法
@@ -43,6 +48,8 @@
  *  @param tipsContent 辅助信息
  */
 - (void)didReceiveTipsContent:(NSString *)tipsContent;
+
+- (void)didReceiveTipsContent:(NSString *)tipsContent showLines:(BOOL)show;
 
 /**
  * 发送文字消息结果
@@ -145,7 +152,7 @@
  * @param ;
  */
 - (void)setClientOnlineWithCustomizedId:(NSString *)customizedId
-                                success:(void (^)(BOOL completion, NSString *agentName, NSArray *receivedMessages))success
+                                success:(void (^)(BOOL completion, NSString *agentName, NSString *agentType, NSArray *receivedMessages, NSError *error))success
                  receiveMessageDelegate:(id<MQServiceToViewInterfaceDelegate>)receiveMessageDelegate;
 
 /**
@@ -153,7 +160,7 @@
  * @param ;
  */
 - (void)setClientOnlineWithClientId:(NSString *)clientId
-                            success:(void (^)(BOOL completion, NSString *agentName, NSArray *receivedMessages))success
+                            success:(void (^)(BOOL completion, NSString *agentName, NSString *agentType, NSArray *receivedMessages, NSError *error))success
              receiveMessageDelegate:(id<MQServiceToViewInterfaceDelegate>)receiveMessageDelegate;
 
 /**
@@ -165,6 +172,12 @@
                         scheduleRule:(MQChatScheduleRules)scheduleRule;
 
 /**
+ *  设置不指定分配的客服或客服组
+ *
+ */
++ (void)setNotScheduledAgentWithAgentId:(NSString *)agentId;
+
+/**
  * 设置顾客离线
  * @param ;
  */
@@ -174,6 +187,8 @@
  *  点击了某消息
  *
  *  @param messageId 消息id
+ #pragma mark xlp - .m文件已经注释 17/7/25
+
  */
 + (void)didTapMessageWithMessageId:(NSString *)messageId;
 
@@ -181,6 +196,18 @@
  *  获取当前客服名字
  */
 + (NSString *)getCurrentAgentName;
+
+/**
+ *  获取当前客服对象
+ */
++ (MQAgent *)getCurrentAgent;
+
+/**
+ *  获取当前客服状态
+ *
+ *  @return onDuty - 在线  offDuty - 隐身  offLine - 离线
+ */
++ (MQChatAgentStatus)getCurrentAgentStatus;
 
 /**
  *  当前是否有客服
@@ -235,5 +262,199 @@
 + (void)setEvaluationLevel:(NSInteger)level
                    comment:(NSString *)comment;
 
+/**
+ *  上传顾客信息
+ *
+ *  @param clientInfo 顾客信息
+ */
++ (void)setClientInfoWithDictionary:(NSDictionary *)clientInfo
+                         completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+ *  更新顾客信息
+ *
+ *  @param clientInfo 顾客信息
+ */
++ (void)updateClientInfoWithDictionary:(NSDictionary *)clientInfo
+                         completion:(void (^)(BOOL success, NSError *error))completion;
+
+/**
+ *  缓存当前的输入文字
+ *
+ *  @param inputtingText 输入文字
+ */
++ (void)setCurrentInputtingText:(NSString *)inputtingText;
+
+/**
+ *  获取缓存的输入文字
+ *
+ *  @return 输入文字
+ */
++ (NSString *)getPreviousInputtingText;
+
+/**
+ * 获得服务端未读消息
+ 
+ * @return 输入文字
+ */
++ (void)getUnreadMessagesWithCompletion:(void (^)(NSArray *messages, NSError *error))completion;
+
+/**
+ * 获得本地未读消息
+ 
+ * @return 输入文字
+ */
++ (NSArray *)getLocalUnreadMessages;
+
+/**
+ * 判断是否被加入了黑名单
+ */
++ (BOOL)isBlacklisted;
+
+/**
+ * 清除已下载的文件
+ */
++ (void)clearReceivedFiles;
+
+/**
+ 修改或增加已保存的消息中的 accessory data 中的数据
+ 
+ @param accessoryData 字典中的数据必须是基本数据和字符串
+ */
++ (void)updateMessageWithId:(NSString *)messageId forAccessoryData:(NSDictionary *)accessoryData;
+
++ (void)updateMessageIds:(NSArray *)messageIds toReadStatus:(BOOL)isRead;
+
+/**
+ * 将所有消息标记为已读
+ */
++ (void)markAllMessagesAsRead;
+
+/**
+ * 汇报文件被下载
+ */
++ (void)clientDownloadFileWithMessageId:(NSString *)messageId
+                          conversatioId:(NSString *)conversationId
+                          andCompletion:(void(^)(NSString *url, NSError *error))action;
+
+/**
+ *  取消下载
+ *
+ *  @param urlString     url
+ */
++ (void)cancelDownloadForUrl:(NSString *)urlString;
+
+
+/**
+ 对机器人的回答做评价
+ @param messageId 消息 id
+ */
++ (void)evaluateBotMessage:(NSString *)messageId
+                  isUseful:(BOOL)isUseful
+                completion:(void (^)(BOOL success, NSString *text, NSError *error))completion;
+
+//强制转人工
+- (void)forceRedirectHumanAgentWithSuccess:(void (^)(BOOL completion, NSString *agentName, NSArray *receivedMessages))success
+                                   failure:(void (^)(NSError *error))failure
+                    receiveMessageDelegate:(id<MQServiceToViewInterfaceDelegate>)receiveMessageDelegate;
+
+//强制转人工
++ (NSString *)getCurrentAgentId;
+
+/**
+ 获取当前的客服 type: agent | admin | robot
+ */
++ (NSString *)getCurrentAgentType;
+
+/**
+ 获取客服邀请评价显示的文案
+ */
++ (void)getEvaluationPromtTextComplete:(void(^)(NSString *, NSError *))action;
+
+/**
+ 获取是否显示强制转接人工按钮
+ */
++ (void)getIsShowRedirectHumanButtonComplete:(void(^)(BOOL, NSError *))action;
+
+/**
+ 获取留言表单引导文案
+ */
++ (void)getMessageFormConfigComplete:(void (^)(MQEnterpriseConfig *config, NSError *))action;
+
+/**
+ 获取配置的 ticket 类别
+ */
++ (void)getTicketCategoryComplete:(void(^)(NSArray *categories))action;
+
+/**
+ *  提交留言表单
+ *
+ *  @param message 留言消息
+ *  @param images 图片数组
+ *  @param clientInfo 顾客的信息
+ *  @param completion  提交留言表单的回调
+ */
++ (void)submitMessageFormWithMessage:(NSString *)message
+                              images:(NSArray *)images
+                          clientInfo:(NSDictionary<NSString *, NSString *>*)clientInfo
+                          completion:(void (^)(BOOL success, NSError *error))completion;
+
+
+/**
+ 获取当前企业的配置信息
+ */
++ (void)getEnterpriseConfigInfoWithCache:(BOOL)isLoadCache complete:(void(^)(MQEnterprise *, NSError *))action;
+
+/**
+ 在准备显示聊天界面是调用
+ */
++ (void)prepareForChat;
+
+/**
+ 在聊天界面消失是调用
+ */
++ (void)completeChat;
+
+/**
+ 切换本地用户为指定的自定义 id 用户, 回调的 clientId 如果为 nil 的话表示刷新失败，或者该用户不存在。
+ */
++ (void)refreshLocalClientWithCustomizedId:(NSString *)customizedId complete:(void(^)(NSString *clientId))action;
+
+/**
+ 判断用户是否在等待
+ */
++ (int)waitingInQueuePosition;
+
+/**
+ 获取当前用户在等待队列的位置
+ */
++ (void)getClientQueuePositionComplete:(void (^)(NSInteger position, NSError *error))action;
+
+/**
+ 
+ */
++ (void)requestPreChatServeyDataIfNeedCompletion:(void(^)(MQPreChatData *data, NSError *error))block;
+
+/**
+ 获取验证码
+ */
++ (void)getCaptchaComplete:(void(^)(NSString *token, UIImage *image))block;
+
++ (void)getCaptchaWithURLComplete:(void (^)(NSString *token, NSString *url))block;
+
++ (void)submitPreChatForm:(NSDictionary *)formData completion:(void(^)(id,NSError *))block;
+
+
+/**
+ 判断上一步操作是否失败
+ */
++ (NSError *)checkGlobalError;
+
+/**
+ 转换 emoji 别名为 Unicode
+ */
++ (NSString *)convertToUnicodeWithEmojiAlias:(NSString *)text;
+
 
 @end
+
