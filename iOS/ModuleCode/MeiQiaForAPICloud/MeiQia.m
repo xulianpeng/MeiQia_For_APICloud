@@ -18,6 +18,8 @@
     UIColor *titleColor;
     
     NSDictionary* clientInfo;
+    
+    MQChatViewManager *chatViewManager;
 }
 
 - (id)initWithUZWebView:(UZWebView *)webView_ {
@@ -134,6 +136,20 @@
     setTitleBarColor = [UZAppUtils colorFromNSString:colorStr];
 }
 
+//xlp 设置preMessage
+
+- (void)setPreSendMessages:(NSDictionary *)paramDict{
+    NSString *messageStr = paramDict[@"messageStr"];
+    if (messageStr != nil && messageStr.length > 0) {
+        
+        if (chatViewManager == nil) {
+            chatViewManager = [MQChatViewManager new];
+        }
+        [chatViewManager setPreSendMessages:[NSArray arrayWithObjects:messageStr, nil]];
+
+    }
+}
+
 
 - (void)show:(NSDictionary *)paramDict {
     NSString *type = paramDict[@"type"];
@@ -142,14 +158,13 @@
     //监听用户上线的通知
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(clientOnlineSuccess) name:MQ_CLIENT_ONLINE_SUCCESS_NOTIFICATION object:nil];
     
-    MQChatViewManager *chatViewManager = [MQChatViewManager new];
+    chatViewManager = [MQChatViewManager new];
     //设置配置
     [chatViewManager setNavigationBarColor:setTitleBarColor];
     [chatViewManager setNavigationBarTintColor:titleColor];
     [chatViewManager setLoginMQClientId:loginMQClientId];
     [chatViewManager setLoginCustomizedId:loginCustomizedId];
     [chatViewManager enableOutgoingAvatar:NO];
-    
     
     //默认使用push
     if ([type.lowercaseString isEqualToString:@"present"]) {

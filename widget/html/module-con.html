@@ -21,7 +21,7 @@ var mq = api.require('meiQia');
 
 //配置初始化美洽需要的appkey
 var param = {
-    appkey:"你的美洽Appkey"
+    appkey:"009c6d3b9af54a81653c1982a1425e7b"
 };
 
 //初始化美洽
@@ -78,6 +78,13 @@ function show() {
 
 	//打开美洽客服界面
     mq.show();
+    
+    //设置  预发送信息
+    var preMessage = {
+    messageStr:"您好,我想向你咨询一下这个问题"
+    };
+    
+    mq.setPreSendMessages(preMessage);
 }
                 </pre>
             </div>

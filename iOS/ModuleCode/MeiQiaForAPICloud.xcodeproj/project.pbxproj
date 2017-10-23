@@ -805,13 +805,13 @@
 			isa = PBXGroup;
 			children = (
 				892428AC1F99EA6C003F4BA0 /* MQChatTableView.h */,
+				892428BF1F99EA6C003F4BA0 /* MQChatTableView.m */,
 				892428AD1F99EA6C003F4BA0 /* MQPullRefreshView */,
 				892428B01F99EA6C003F4BA0 /* MQRecordView */,
 				892428B31F99EA6C003F4BA0 /* MCKeyboardController */,
 				892428B61F99EA6C003F4BA0 /* MQToast */,
 				892428B91F99EA6C003F4BA0 /* MQEvaluationView */,
 				892428BC1F99EA6C003F4BA0 /* MQImageViewer */,
-				892428BF1F99EA6C003F4BA0 /* MQChatTableView.m */,
 				892428C01F99EA6C003F4BA0 /* MQInputBar */,
 				892428CF1F99EA6C003F4BA0 /* MQWebView */,
 			);
@@ -821,8 +821,8 @@
 		892428AD1F99EA6C003F4BA0 /* MQPullRefreshView */ = {
 			isa = PBXGroup;
 			children = (
-				892428AE1F99EA6C003F4BA0 /* MQRefresh.m */,
 				892428AF1F99EA6C003F4BA0 /* MQRefresh.h */,
+				892428AE1F99EA6C003F4BA0 /* MQRefresh.m */,
 			);
 			path = MQPullRefreshView;
 			sourceTree = "<group>";
