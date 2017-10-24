@@ -56,8 +56,13 @@
 <script type="text/javascript" src="./script/api.js"></script>
 <script type="text/javascript">
     apiready = function(){
+        
+        api.setStatusBarStyle({
+                              style: 'light'
+                              });
         var header = $api.byId('header');
         $api.fixIos7Bar(header);
+
         var offset = $api.offset(header);
 
         api.openFrame({
@@ -66,7 +71,7 @@
             bounces: false,
             rect: {
                 x: 0,
-                y: offset.h,
+                y: offset.h + 30,
                 w: "auto",
                 h: "auto"
             }

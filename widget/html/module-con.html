@@ -21,7 +21,7 @@ var mq = api.require('meiQia');
 
 //配置初始化美洽需要的appkey
 var param = {
-    appkey:"009c6d3b9af54a81653c1982a1425e7b"
+    appkey:"你的美洽appkey"
 };
 
 //初始化美洽
@@ -51,19 +51,19 @@ function show() {
         "服务器":"电信一区"
     };
     mq.setClientInfo(infoParam);
-    
+
     //设置自定义用户Id
     var customizedIdParam = {
     id:"id00001"
     };
     mq.setLoginCustomizedId(customizedIdParam);
-    
+
     //设置美洽ID
     //var clientIdParam = {
     //    id:"9f0b2d3339edeec591a6e3be5dbafd64"
     //};
     //mq.setLoginMQClientId(clientIdParam);
-    
+
     //设置标题栏背景颜色
     var titleBarColor = {
         color:"#17c7d0"
@@ -78,13 +78,8 @@ function show() {
 
 	//打开美洽客服界面
     mq.show();
+
     
-    //设置  预发送信息
-    var preMessage = {
-    messageStr:"您好,我想向你咨询一下这个问题"
-    };
-    
-    mq.setPreSendMessages(preMessage);
 }
                 </pre>
             </div>
@@ -92,7 +87,7 @@ function show() {
                 <div class="btn-group btn-group-justified">
                     <div class="btn-group">
                         <button tapmode="" role="run" type="button" class="btn btn-primary">运行</button>
-                    </div>	  
+                    </div>
                     <div class="btn-group">
                         <button tapmode=""  role="edit" type="button" class="btn btn-info">编辑</button>
                     </div>

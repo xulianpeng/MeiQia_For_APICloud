@@ -136,19 +136,7 @@
     setTitleBarColor = [UZAppUtils colorFromNSString:colorStr];
 }
 
-//xlp 设置preMessage
 
-- (void)setPreSendMessages:(NSDictionary *)paramDict{
-    NSString *messageStr = paramDict[@"messageStr"];
-    if (messageStr != nil && messageStr.length > 0) {
-        
-        if (chatViewManager == nil) {
-            chatViewManager = [MQChatViewManager new];
-        }
-        [chatViewManager setPreSendMessages:[NSArray arrayWithObjects:messageStr, nil]];
-
-    }
-}
 
 
 - (void)show:(NSDictionary *)paramDict {
